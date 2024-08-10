@@ -1,1 +1,203 @@
+import javax.swing.*;
+import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
+// Custom dialog class to customize appearance
+class CustomDialog extends JDialog {
+    public CustomDialog(JFrame parent, String title, String message) {
+        super(parent, title, true);
+        JPanel panel = new JPanel(new BorderLayout());
+        JLabel label = new JLabel(message);
+        label.setFont(new Font("Arial", Font.PLAIN, 18));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        panel.add(label, BorderLayout.CENTER);
+        getContentPane().add(panel, BorderLayout.CENTER);
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.addActionListener(e -> {
+            setVisible(false);
+            dispose();
+        });
+        panel.add(cancelButton, BorderLayout.SOUTH);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setSize(400, 200);
+        setLocationRelativeTo(parent);
+    }
+}
+
+// Transaction class to store transaction details including date and time
+class Transaction {
+    private String type;
+    private double amount;
+    private String dateTime;
+
+    public Transaction(String type, double amount) {
+        this.type = type;
+        this.amount = amount;
+        this.dateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public String getDateTime() {
+        return dateTime;
+    }
+}
+
+// Bank Account class to store the account balance and transaction history
+class BankAccount {
+    private double balance;
+    private List<Transaction> transactions;
+
+    public BankAccount(double initialBalance) {
+        this.balance = initialBalance;
+        this.transactions = new ArrayList<>();
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void deposit(double amount) {
+        balance += amount;
+        transactions.add(new Transaction("Deposit", amount));
+        JOptionPane.showMessageDialog(null, "Deposited: ₹" + amount + "\nTotal balance: ₹" + balance, "Deposit Successful", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public boolean withdraw(double amount) {
+        if (amount <= balance) {
+            balance -= amount;
+            transactions.add(new Transaction("Withdrawal", amount));
+            JOptionPane.showMessageDialog(null, "Withdrawn: ₹" + amount + "\nPlease take your cash.\nTotal balance: ₹" + balance, "Withdrawal Successful", JOptionPane.INFORMATION_MESSAGE);
+            return true;
+        } else {
+            JOptionPane.showMessageDialog(null, "Insufficient balance.", "Withdrawal Failed", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
+    public boolean transfer(double amount, String accountNumber) {
+        // Perform transfer logic here
+        // For demonstration purposes, just show a confirmation message
+        balance -= amount;
+        transactions.add(new Transaction("Transfer to " + accountNumber, amount));
+        JOptionPane.showMessageDialog(null, "₹" + amount + " transferred to account number: " + accountNumber, "Transfer Successful", JOptionPane.INFORMATION_MESSAGE);
+        return true;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+}
+
+// ATM class representing the ATM machine
+class ATM {
+    private BankAccount account;
+
+    public ATM(BankAccount account) {
+        this.account = account;
+    }
+
+    public void checkBalance() {
+        JOptionPane.showMessageDialog(null, "Your balance is: ₹" + account.getBalance(), "Total Balance", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void showTransactionHistory() {
+        List<Transaction> transactions = account.getTransactions();
+        StringBuilder message = new StringBuilder("Transaction History:\n");
+        for (Transaction transaction : transactions) {
+            message.append(transaction.getType()).append(": ₹").append(transaction.getAmount()).append(" (").append(transaction.getDateTime()).append(")\n");
+        }
+        JOptionPane.showMessageDialog(null, message.toString(), "Transaction History", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void deposit(double amount) {
+        account.deposit(amount);
+    }
+
+    public void withdraw(double amount) {
+        if (account.withdraw(amount)) {
+            JOptionPane.showMessageDialog(null, "Transaction successful.", "Success", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(null, "Transaction failed. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void transfer() {
+        String accountNumber = JOptionPane.showInputDialog(null, "Enter account number (numeric, 12 digits):", "Transfer", JOptionPane.PLAIN_MESSAGE);
+        if (accountNumber != null && accountNumber.matches("\\d{12}")) {
+            double amount = Double.parseDouble(JOptionPane.showInputDialog(null, "Enter amount to transfer in rupees: ₹", "Transfer", JOptionPane.PLAIN_MESSAGE));
+            account.transfer(amount, accountNumber);
+        } else {
+            JOptionPane.showMessageDialog(null, "Invalid account number. Please enter 12 numeric digits.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}
+
+// Main class to test the ATM interface
+public class Main {
+    public static void main(String[] args) {
+        BankAccount account = new BankAccount(1000); // Initial balance ₹1000
+        ATM atm = new ATM(account);
+
+        // Test ATM functionality
+        while (true) {
+            UIManager.put("OptionPane.background", new Color(153, 51, 255)); // Violet background
+            UIManager.put("Panel.background", new Color(153, 51, 255)); // Violet background
+            UIManager.put("OptionPane.messageForeground", Color.WHITE); // White text color
+            UIManager.put("Button.background", Color.WHITE); // White button background
+            UIManager.put("Button.foreground", new Color(153, 51, 255)); // Violet button text color
+            
+            String option = (String) JOptionPane.showInputDialog(null,
+                    "Select an option:",
+                    "ATM Menu",
+                    JOptionPane.PLAIN_MESSAGE,
+                    new ImageIcon(),
+                    new String[]{"Deposit", "Withdraw", "Transfer", "Check Balance", "Transaction History", "Exit"},
+                    "Deposit");
+
+            if (option == null) { // Cancel option
+                int confirm = JOptionPane.showConfirmDialog(null, "Do you really want to exit?", "Confirm Exit", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    JOptionPane.showMessageDialog(null, "Exiting. Thank you!");
+                    System.exit(0);
+                }
+            } else {
+                switch (option) {
+                    case "Deposit":
+                        double depositAmount = Double.parseDouble(JOptionPane.showInputDialog(null, "Enter deposit amount in rupees: ₹", "Deposit", JOptionPane.PLAIN_MESSAGE));
+                        atm.deposit(depositAmount);
+                        break;
+                    case "Withdraw":
+                        double withdrawAmount = Double.parseDouble(JOptionPane.showInputDialog(null, "Enter withdrawal amount in rupees: ₹", "Withdraw", JOptionPane.PLAIN_MESSAGE));
+                        atm.withdraw(withdrawAmount);
+                        break;
+                    case "Transfer":
+                        atm.transfer();
+                        break;
+                    case "Check Balance":
+                        atm.checkBalance();
+                        break;
+                    case "Transaction History":
+                        atm.showTransactionHistory();
+                        break;
+                    case "Exit":
+                        int confirm = JOptionPane.showConfirmDialog(null, "Do you really want to exit?", "Confirm Exit", JOptionPane.YES_NO_OPTION);
+                        if (confirm == JOptionPane.YES_OPTION) {
+                            JOptionPane.showMessageDialog(null, "Exiting. Thank you!");
+                            System.exit(0);
+                        }
+                        break;
+                }
+            }
+        }
+    }
+}
